@@ -12,6 +12,10 @@ from pymongo.server_api import ServerApi
 import os
 from datetime import datetime
 
+# Set the working directory to where your script is located
+os.chdir('/Users/snehbhandari/Documents/Project/Calendar Automation Project')
+
+# MongoDB connection URI
 uri = "mongodb+srv://snehbhandari:4umZ36RvSekIk1Xu@calendardata.erd5u.mongodb.net/?retryWrites=true&w=majority&appName=CalendarData"
 
 # Create a new client and connect to the server
@@ -22,38 +26,27 @@ try:
     client.admin.command('ping')
     print("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
-    print(e) 
+    print(f"Error connecting to MongoDB: {e}")
 
-# json file containing all the calendar ids 
-cal_ids = 'calendars.json'
-# cluster name in MongoDB 
+# Cluster and collection names
 cls_name = 'CalendarData'
-# collection name in MongoDB 
 col_name = "activity"
-# CSV file name to save as
-csv_file = 'activity_data.csv'
 
 # Specify the collection you want to work with
 collection = client[cls_name][col_name]
 
-# Find all unique calendar names
-# unique_calendar_names = collection.distinct('Calendar Name')
+# Find all documents in the collection
+documents = collection.find()
 
-# Print the unique calendar names
-# print("Unique Calendar Names:", unique_calendar_names)
+# Save CSV file to this location 
+save_in_directory = os.path.join("/Users/snehbhandari/Documents/Project/Calendar Automation Project/", "data")
 
-documents = collection.find() 
-
-# savae csv file to this location 
-save_in_directory= os.path.join(os.getcwd(), "data")
-
-#checking if the directory exists 
+# Check if the directory exists and create it if it doesn't
 os.makedirs(save_in_directory, exist_ok=True)
 
-# final path file needs to be stored at 
+# Final path for the CSV file
+csv_file = 'activity_data.csv'
 csv_file_path = os.path.join(save_in_directory, csv_file)
-
-
 
 # Check if the file already exists and generate a new filename if it does
 if os.path.exists(csv_file_path):
@@ -65,14 +58,18 @@ if os.path.exists(csv_file_path):
 fieldnames = set()
 for document in documents:
     fieldnames.update(document.keys())
+
 # Reset the cursor since it is exhausted after iterating
 documents = collection.find()
 
 # Write to CSV file
-with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-    writer = csv.DictWriter(file, fieldnames=list(fieldnames))
-    writer.writeheader()
-    for document in documents:
-        writer.writerow(document)
+try:
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=list(fieldnames))
+        writer.writeheader()
+        for document in documents:
+            writer.writerow(document)
 
-print(f"Data has been saved to {csv_file_path}")
+    print(f"Data has been saved to {csv_file_path}")
+except Exception as e:
+    print(f"Error writing to CSV file: {e}")
